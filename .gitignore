@@ -1,0 +1,4 @@
+mlruns
+mlflow.db
+temp_data
+airflow_venv
