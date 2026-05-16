@@ -102,9 +102,32 @@ def scale(X_train: pl.DataFrame, X_test: pl.DataFrame, num_features: list[str], 
     return X_train, X_test
 
 
-def memory_optimize(X_train: pl.DataFrame, X_test: pl.DataFrame) -> tuple[pl.DataFrame]:
-    X_train = pl.DataFrame([s.shrink_dtype() for s in X_train])
-    X_test = pl.DataFrame([s.shrink_dtype() for s in X_test])
+def optimize_series_dtype(series: pl.Series) -> pl.Series:
+    if series.dtype in (pl.Float32, pl.Float64):
+        values = series.to_numpy()
+
+        is_integer_like = np.all(np.isfinite(values)) and np.allclose(
+            values,
+            np.round(values),
+        )
+        if is_integer_like:
+            return series.cast(pl.Int64).shrink_dtype()
+
+    return series.shrink_dtype()
+
+
+def memory_optimize(
+    X_train: pl.DataFrame,
+    X_test: pl.DataFrame
+) -> tuple[pl.DataFrame, pl.DataFrame]:
+    X_train = pl.DataFrame([
+        optimize_series_dtype(s)
+        for s in X_train
+    ])
+    X_test = pl.DataFrame([
+        optimize_series_dtype(s)
+        for s in X_test
+    ])
     return X_train, X_test
 
 
